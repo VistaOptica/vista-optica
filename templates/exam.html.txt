@@ -1,0 +1,13 @@
+<h2>Examen de {{ patient.name }}</h2>
+
+<form method="post">
+    OD: <input name="od"><br>
+    OI: <input name="oi"><br>
+    Diagnóstico:<br>
+    <textarea name="diagnosis"></textarea><br>
+    Notas:<br>
+    <textarea name="notes"></textarea><br>
+    <button>Guardar</button>
+</form>
+
+<a href="/dashboard">Volver</a>

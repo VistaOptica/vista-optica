@@ -1,0 +1,16 @@
+<h2>Caja</h2>
+
+<form method="post">
+    ID Paciente: <input name="patient"><br>
+    Monto: <input name="amount"><br>
+    Concepto: <input name="concept"><br>
+    <button>Guardar</button>
+</form>
+
+<ul>
+{% for p in payments %}
+<li>{{ p.name }} - S/ {{ p.amount }} - {{ p.concept }}</li>
+{% endfor %}
+</ul>
+
+<a href="/dashboard">Volver</a>

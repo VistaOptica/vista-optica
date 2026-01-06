@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vista Óptica - Panel</title>
+</head>
+<body>
+    <h2>Vista Óptica – Centro de Salud Visual</h2>
+
+    <p>Pacientes: {{ patients }}</p>
+    <p>Exámenes: {{ exams }}</p>
+    <p>Lentes: {{ orders }}</p>
+    <p>Ingresos: S/ {{ income }}</p>
+
+    <hr>
+
+    <a href="/patients">Pacientes</a> |
+    <a href="/orders">Lentes</a> |
+    <a href="/payments">Caja</a>
+</body>
+</html>
