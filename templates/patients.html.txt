@@ -1,0 +1,15 @@
+<h2>Pacientes</h2>
+<form method="post">
+    <input name="name" placeholder="Nombre">
+    <input name="dni" placeholder="DNI">
+    <input name="phone" placeholder="Teléfono">
+    <button>Guardar</button>
+</form>
+
+<ul>
+{% for p in patients %}
+<li>{{ p.name }} - <a href="/exam/{{ p.id }}">Examen</a></li>
+{% endfor %}
+</ul>
+
+<a href="/dashboard">Volver</a>

@@ -1,0 +1,16 @@
+<h2>Pedidos de lentes</h2>
+
+<form method="post">
+    ID Paciente: <input name="patient"><br>
+    Montura: <input name="frame"><br>
+    Lunas: <input name="lens"><br>
+    <button>Guardar</button>
+</form>
+
+<ul>
+{% for o in orders %}
+<li>{{ o.name }} - {{ o.frame }} - {{ o.lens }} - {{ o.status }}</li>
+{% endfor %}
+</ul>
+
+<a href="/dashboard">Volver</a>
