@@ -9,7 +9,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 def get_db():
     return psycopg2.connect(DATABASE_URL)
 
-# Crear tabla al iniciar
+# Crear tabla automáticamente
 with get_db() as conn:
     with conn.cursor() as cur:
         cur.execute("""
@@ -57,7 +57,7 @@ def create_admin():
             cur.execute("""
                 INSERT INTO users (username, password)
                 VALUES ('admin', '1234')
-                ON CONFLICT DO NOTHING;
+                ON CONFLICT (username) DO NOTHING;
             """)
             conn.commit()
     return "Usuario admin creado. Usuario: admin / Clave: 1234"
