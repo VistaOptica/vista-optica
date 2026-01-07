@@ -7,9 +7,9 @@ app = Flask(__name__)
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db():
-    return psycopg2.connect(DATABASE_URL, sslmode="require")
+    return psycopg2.connect(DATABASE_URL)
 
-# Crear tabla automáticamente
+# Crear tabla al iniciar
 with get_db() as conn:
     with conn.cursor() as cur:
         cur.execute("""
@@ -50,7 +50,6 @@ def login():
 
     return render_template_string(LOGIN_HTML, error=error)
 
-# Ruta para crear usuario admin
 @app.route("/create_admin")
 def create_admin():
     with get_db() as conn:
@@ -61,4 +60,4 @@ def create_admin():
                 ON CONFLICT DO NOTHING;
             """)
             conn.commit()
-    return "Usuario admin creado correctamente"
+    return "Usuario admin creado. Usuario: admin / Clave: 1234"
