@@ -76,7 +76,7 @@ def login():
         pwd = request.form["password"]
 
         db = get_db()
-        u = db.execute("SELECT * FROM users WHERE username=? AND password=?", (user,pwd)).fetchone()
+        u = db.execute("SELECT * FROM users WHERE username=%s AND password=%s", (user,pwd)).fetchone()
 
         if u:
             session["user"] = u["username"]
@@ -106,7 +106,7 @@ def patients():
         name = request.form["name"]
         dni = request.form["dni"]
         phone = request.form["phone"]
-        db.execute("INSERT INTO patients (name,dni,phone) VALUES (?,?,?)", (name,dni,phone))
+        db.execute("INSERT INTO patients (name,dni,phone) VALUES (%s,%s,%s)", (name,dni,phone))
         db.commit()
 
     data = db.execute("SELECT * FROM patients").fetchall()
@@ -124,14 +124,14 @@ def exam(pid):
         notes = request.form["notes"]
 
         db.execute(
-            "INSERT INTO exams (patient_id,od,oi,diagnosis,notes) VALUES (?,?,?,?,?)",
+            "INSERT INTO exams (patient_id,od,oi,diagnosis,notes) VALUES (%s,%s,%s,%s,%s)",
             (pid,od,oi,diagnosis,notes)
         )
         db.commit()
 
         return redirect("/dashboard")
 
-    patient = db.execute("SELECT * FROM patients WHERE id=?", (pid,)).fetchone()
+    patient = db.execute("SELECT * FROM patients WHERE id=%s", (pid,)).fetchone()
     return render_template("exam.html", patient=patient)
 
 # ---------------- ORDERS ----------------
@@ -146,7 +146,7 @@ def orders():
         status = "En proceso"
 
         db.execute(
-            "INSERT INTO orders (patient_id,frame,lens,status) VALUES (?,?,?,?)",
+            "INSERT INTO orders (patient_id,frame,lens,status) VALUES (%s,%s,%s,%s)",
             (pid,frame,lens,status)
         )
         db.commit()
@@ -170,7 +170,7 @@ def payments():
         concept = request.form["concept"]
 
         db.execute(
-            "INSERT INTO payments (patient_id,amount,concept) VALUES (?,?,?)",
+            "INSERT INTO payments (patient_id,amount,concept) VALUES (%s,%s,%s)",
             (pid,amount,concept)
         )
         db.commit()
