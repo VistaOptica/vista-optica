@@ -5,20 +5,24 @@ import os
 app = Flask(__name__)
 app.secret_key = "vistaoptica123"
 
-# ---------------- DATABASE ----------------
+# ===============================
+# DATABASE
+# ===============================
 def get_db():
     DATABASE_URL = os.environ.get("DATABASE_URL")
     return psycopg2.connect(DATABASE_URL)
 
-# ---------------- INIT DB ----------------
+# ===============================
+# INIT DATABASE
+# ===============================
 def init_db():
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
+    cur = db.cursor()
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
-            username TEXT,
+            username TEXT UNIQUE,
             password TEXT,
             role TEXT
         )
@@ -36,7 +40,7 @@ def init_db():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS exams (
             id SERIAL PRIMARY KEY,
-            patient_id INTEGER,
+            patient_id INTEGER REFERENCES patients(id),
             od TEXT,
             oi TEXT,
             diagnosis TEXT,
@@ -48,7 +52,7 @@ def init_db():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS orders (
             id SERIAL PRIMARY KEY,
-            patient_id INTEGER,
+            patient_id INTEGER REFERENCES patients(id),
             frame TEXT,
             lens TEXT,
             status TEXT
@@ -58,32 +62,60 @@ def init_db():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS payments (
             id SERIAL PRIMARY KEY,
-            patient_id INTEGER,
+            patient_id INTEGER REFERENCES patients(id),
             amount NUMERIC,
             concept TEXT,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    conn.commit()
+    db.commit()
     cur.close()
-    conn.close()
+    db.close()
+
+# ===============================
+# CREATE DEFAULT ADMIN
+# ===============================
+def create_admin():
+    db = get_db()
+    cur = db.cursor()
+
+    cur.execute("SELECT COUNT(*) FROM users")
+    count = cur.fetchone()[0]
+
+    if count == 0:
+        cur.execute(
+            "INSERT INTO users (username,password,role) VALUES (%s,%s,%s)",
+            ("admin", "1234", "admin")
+        )
+        db.commit()
+
+    cur.close()
+    db.close()
 
 init_db()
+create_admin()
 
-# ---------------- LOGIN ----------------
+# ===============================
+# LOGIN
+# ===============================
 @app.route("/", methods=["GET","POST"])
 def login():
     if request.method == "POST":
         user = request.form["username"]
         pwd = request.form["password"]
 
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (user,pwd))
+        db = get_db()
+        cur = db.cursor()
+
+        cur.execute(
+            "SELECT username FROM users WHERE username=%s AND password=%s",
+            (user,pwd)
+        )
         u = cur.fetchone()
+
         cur.close()
-        conn.close()
+        db.close()
 
         if u:
             session["user"] = user
@@ -91,11 +123,13 @@ def login():
 
     return render_template("login.html")
 
-# ---------------- DASHBOARD ----------------
+# ===============================
+# DASHBOARD
+# ===============================
 @app.route("/dashboard")
 def dashboard():
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
+    cur = db.cursor()
 
     cur.execute("SELECT COUNT(*) FROM patients")
     patients = cur.fetchone()[0]
@@ -110,86 +144,104 @@ def dashboard():
     income = cur.fetchone()[0]
 
     cur.close()
-    conn.close()
+    db.close()
 
     return render_template("dashboard.html", patients=patients, exams=exams, orders=orders, income=income)
 
-# ---------------- PATIENTS ----------------
+# ===============================
+# PATIENTS
+# ===============================
 @app.route("/patients", methods=["GET","POST"])
 def patients():
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
+    cur = db.cursor()
 
     if request.method == "POST":
         cur.execute(
             "INSERT INTO patients (name,dni,phone) VALUES (%s,%s,%s)",
-            (request.form["name"], request.form["dni"], request.form["phone"])
+            (request.form["name"],request.form["dni"],request.form["phone"])
         )
-        conn.commit()
+        db.commit()
 
     cur.execute("SELECT * FROM patients")
     data = cur.fetchall()
 
     cur.close()
-    conn.close()
-
+    db.close()
     return render_template("patients.html", patients=data)
 
-# ---------------- EXAMS ----------------
+# ===============================
+# EXAMS
+# ===============================
 @app.route("/exam/<int:pid>", methods=["GET","POST"])
 def exam(pid):
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
+    cur = db.cursor()
 
     if request.method == "POST":
-        cur.execute(
-            "INSERT INTO exams (patient_id,od,oi,diagnosis,notes) VALUES (%s,%s,%s,%s,%s)",
-            (pid, request.form["od"], request.form["oi"], request.form["diagnosis"], request.form["notes"])
+        cur.execute("""
+            INSERT INTO exams (patient_id,od,oi,diagnosis,notes)
+            VALUES (%s,%s,%s,%s,%s)
+        """,(pid,
+             request.form["od"],
+             request.form["oi"],
+             request.form["diagnosis"],
+             request.form["notes"])
         )
-        conn.commit()
-        cur.close()
-        conn.close()
+        db.commit()
         return redirect("/dashboard")
 
-    cur.execute("SELECT * FROM patients WHERE id=%s", (pid,))
+    cur.execute("SELECT * FROM patients WHERE id=%s",(pid,))
     patient = cur.fetchone()
 
     cur.close()
-    conn.close()
-
+    db.close()
     return render_template("exam.html", patient=patient)
 
-# ---------------- ORDERS ----------------
+# ===============================
+# ORDERS
+# ===============================
 @app.route("/orders", methods=["GET","POST"])
 def orders():
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
+    cur = db.cursor()
 
     if request.method == "POST":
-        cur.execute(
-            "INSERT INTO orders (patient_id,frame,lens,status) VALUES (%s,%s,%s,%s)",
-            (request.form["patient"], request.form["frame"], request.form["lens"], "En proceso")
-        )
-        conn.commit()
+        cur.execute("""
+            INSERT INTO orders (patient_id,frame,lens,status)
+            VALUES (%s,%s,%s,'En proceso')
+        """,(request.form["patient"],request.form["frame"],request.form["lens"]))
+        db.commit()
 
     cur.execute("""
-        SELECT orders.id, patients.name, orders.frame, orders.lens, orders.status
+        SELECT orders.*, patients.name
         FROM orders
         JOIN patients ON orders.patient_id = patients.id
     """)
     data = cur.fetchall()
 
     cur.close()
-    conn.close()
-
+    db.close()
     return render_template("orders.html", orders=data)
 
-# ---------------- PAYMENTS ----------------
+# ===============================
+# PAYMENTS
+# ===============================
 @app.route("/payments", methods=["GET","POST"])
 def payments():
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
+    cur = db.cursor()
 
     if request.method == "POST":
-        cur.execute(
-            "INSERT INTO
+        cur.execute("""
+            INSERT INTO payments (patient_id,amount,concept)
+            VALUES (%s,%s,%s)
+        """,(request.form["patient"],request.form["amount"],request.form["concept"]))
+        db.commit()
+
+    cur.execute("""
+        SELECT payments.*, patients.name
+        FROM payments
+        JOIN patients ON payments.patient_id = patients.id
+    """)
+    data = cur.fet
