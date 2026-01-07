@@ -1,15 +1,15 @@
 import os
 import psycopg2
-from flask import Flask, request, render_template_string, redirect
+from flask import Flask, request, render_template_string
 
 app = Flask(__name__)
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db():
-    return psycopg2.connect(DATABASE_URL)
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
-# CREA TABLA AUTOMÁTICAMENTE SI NO EXISTE
+# Crear tabla automáticamente
 with get_db() as conn:
     with conn.cursor() as cur:
         cur.execute("""
@@ -50,7 +50,7 @@ def login():
 
     return render_template_string(LOGIN_HTML, error=error)
 
-# CREA USUARIO ADMIN SOLO UNA VEZ
+# Ruta para crear usuario admin
 @app.route("/create_admin")
 def create_admin():
     with get_db() as conn:
@@ -61,4 +61,4 @@ def create_admin():
                 ON CONFLICT DO NOTHING;
             """)
             conn.commit()
-    return "Usuario admin creado"
+    return "Usuario admin creado correctamente"
