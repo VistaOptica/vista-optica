@@ -7,8 +7,8 @@ app.secret_key = "vistaoptica123"
 
 # ---------------- DATABASE ----------------
 def get_db():
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
+    DATABASE_URL = os.environ.get("DATABASE_URL")
+    conn = psycopg2.connect(DATABASE_URL)
     return conn
 
 # Create tables
